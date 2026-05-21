@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>算柱圖 - 製圖工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+        }
+        body {
+            background: linear-gradient(to bottom, #f5f7fa, #e8ecf1);
+            padding: 15px;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        .time-display {
+            font-size: 14px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 12px;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .battery {
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 12px;
+        }
+        .battery-icon {
+            margin-left: 5px;
+            font-size: 16px;
+        }
+        .abacus {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 8px;
+            min-width: 65px;
+        }
+        .column-title {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+            background: #f0f5ff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+        }
+        .beads-container {
+            height: 175px; /* 調整後的高度，略高於九粒算珠的總高度 */
+            width: 55px;
+            background-color: #f8f9fa;
+            border: 2px solid #d1d9e6;
+            border-radius: 6px;
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+            justify-content: flex-start;
+            padding: 3px;
+            box-shadow: inset 3px 3px 7px #f0f0f0, inset -3px -3px 7px #ffffff;
+        }
+        .bead-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .bead {
+            height: 15px;
+            width: 50px;
+            border-radius: 4px;
+            margin: 2px;
+            transition: all 0.2s ease;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        .bead.active {
+            opacity: 1;
+        }
+        .bead.inactive {
+            opacity: 0.2;
+        }
+        .bead-count {
+            margin-top: 6px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            background: linear-gradient(to bottom, #4CAF50, #3d9140);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 3px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        .btn-minus {
+            background: linear-gradient(to bottom, #f44336, #d32f2f);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 3px 3px 7px rgba(0,0,0,0.25);
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        .display {
+            text-align: center;
+            font-size: 28px;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(to right, #f1f8ff, #e3f2fd);
+            border-radius: 8px;
+            border: 1px solid #d1e7ff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        .display span {
+            font-weight: bold;
+            color: #1565c0;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+        .reset {
+            background: linear-gradient(to bottom, #f44336, #d32f2f);
+            color: white;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.25);
+        }
+        .action-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .instructions {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .abacus {
+                justify-content: flex-start;
+            }
+            .column {
+                margin: 0 5px;
+                min-width: 60px;
+            }
+            .beads-container {
+                height: 155px; /* 移動端調整後的高度 */
+                width: 50px;
+            }
+            .bead {
+                height: 14px;
+                width: 46px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="time-display" id="timeDisplay">下午11:41 9月1日週一</div>
+            <div class="title">算柱圖 - 製圖工具</div>
+            <div class="battery">100%<span class="battery-icon">🔋</span></div>
+        </div>
+        
+        <div class="abacus" id="abacus">
+            <!-- 算柱将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="display">
+            算柱顯示: <span id="result">0</span>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action-btn reset" id="resetBtn">重設</button>
+        </div>
+        
+        <div class="instructions">
+            <p>使用說明: 點擊每個位數的"+"和"-"按鈕來調整算珠數量，每個數位最多可以放置九粒算珠。</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新時鐘
+            function updateClock() {
+                const now = new Date();
+                const hours = now.getHours();
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const month = now.getMonth() + 1;
+                const day = now.getDate();
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                const weekday = weekdays[now.getDay()];
+                
+                const timeString = `下午${hours}:${minutes} ${month}月${day}日週${weekday}`;
+                document.getElementById('timeDisplay').textContent = timeString;
+            }
+            
+            updateClock();
+            setInterval(updateClock, 60000);
+            
+            // 九位算柱數據
+            const columns = [
+                { name: '億位', value: 100000000, color: '#1e88e5' },
+                { name: '千萬位', value: 10000000, color: '#7e57c2' },
+                { name: '百萬位', value: 1000000, color: '#ef5350' },
+                { name: '十萬位', value: 100000, color: '#ff7043' },
+                { name: '萬位', value: 10000, color: '#29b6f6' },
+                { name: '千位', value: 1000, color: '#ab47bc' },
+                { name: '百位', value: 100, color: '#ec407a' },
+                { name: '十位', value: 10, color: '#ffa726' },
+                { name: '個位', value: 1, color: '#66bb6a' }
+            ];
+            
+            const abacusElement = document.getElementById('abacus');
+            const resultElement = document.getElementById('result');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 初始化算柱
+            columns.forEach((column, index) => {
+                const columnElement = document.createElement('div');
+                columnElement.className = 'column';
+                
+                const titleElement = document.createElement('div');
+                titleElement.className = 'column-title';
+                titleElement.textContent = column.name;
+                columnElement.appendChild(titleElement);
+                
+                const beadsContainer = document.createElement('div');
+                beadsContainer.className = 'beads-container';
+                beadsContainer.id = `beads-${index}`;
+                columnElement.appendChild(beadsContainer);
+                
+                // 添加算珠（默认全部为空）
+                for (let i = 0; i < 9; i++) {
+                    const beadRow = document.createElement('div');
+                    beadRow.className = 'bead-row';
+                    
+                    const beadElement = document.createElement('div');
+                    beadElement.className = 'bead inactive';
+                    beadElement.style.backgroundColor = column.color;
+                    beadRow.appendChild(beadElement);
+                    
+                    beadsContainer.appendChild(beadRow);
+                }
+                
+                // 添加算珠计数显示
+                const countElement = document.createElement('div');
+                countElement.className = 'bead-count';
+                countElement.id = `count-${index}`;
+                countElement.textContent = '0';
+                columnElement.appendChild(countElement);
+                
+                const controlsElement = document.createElement('div');
+                controlsElement.className = 'controls';
+                
+                const plusButton = document.createElement('button');
+                plusButton.className = 'btn';
+                plusButton.textContent = '+';
+                plusButton.addEventListener('click', () => adjustBeads(index, 1));
+                
+                const minusButton = document.createElement('button');
+                minusButton.className = 'btn btn-minus';
+                minusButton.textContent = '-';
+                minusButton.addEventListener('click', () => adjustBeads(index, -1));
+                
+                controlsElement.appendChild(plusButton);
+                controlsElement.appendChild(minusButton);
+                columnElement.appendChild(controlsElement);
+                
+                abacusElement.appendChild(columnElement);
+            });
+            
+            // 調整算珠數量
+            function adjustBeads(columnIndex, change) {
+                const beadsContainer = document.getElementById(`beads-${columnIndex}`);
+                const beads = beadsContainer.querySelectorAll('.bead');
+                const countElement = document.getElementById(`count-${columnIndex}`);
+                
+                // 計算當前活躍的算珠數量
+                let activeCount = 0;
+                beads.forEach(bead => {
+                    if (bead.classList.contains('active')) {
+                        activeCount++;
+                    }
+                });
+                
+                let newActiveCount = activeCount + change;
+                newActiveCount = Math.max(0, Math.min(9, newActiveCount)); // 限制在0-9之間
+                
+                // 更新算珠顯示
+                beads.forEach((bead, index) => {
+                    if (index < newActiveCount) {
+                        bead.classList.remove('inactive');
+                        bead.classList.add('active');
+                    } else {
+                        bead.classList.remove('active');
+                        bead.classList.add('inactive');
+                    }
+                });
+                
+                // 更新計數顯示
+                countElement.textContent = newActiveCount;
+                
+                // 更新計算結果
+                calculateResult();
+            }
+            
+            // 計算結果
+            function calculateResult() {
+                let total = 0;
+                columns.forEach((column, index) => {
+                    const beadsContainer = document.getElementById(`beads-${index}`);
+                    const beads = beadsContainer.querySelectorAll('.bead');
+                    
+                    let activeCount = 0;
+                    beads.forEach(bead => {
+                        if (bead.classList.contains('active')) {
+                            activeCount++;
+                        }
+                    });
+                    
+                    total += activeCount * column.value;
+                });
+                resultElement.textContent = total;
+            }
+            
+            // 重設按鈕
+            resetBtn.addEventListener('click', function() {
+                columns.forEach((_, index) => {
+                    const beadsContainer = document.getElementById(`beads-${index}`);
+                    const beads = beadsContainer.querySelectorAll('.bead');
+                    const countElement = document.getElementById(`count-${index}`);
+                    
+                    beads.forEach(bead => {
+                        bead.classList.remove('active');
+                        bead.classList.add('inactive');
+                    });
+                    
+                    countElement.textContent = '0';
+                });
+                calculateResult();
+            });
+            
+            // 初始化計算
+            calculateResult();
+        });
+    </script>
+</body>
+</html>
