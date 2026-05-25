@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小老師破奇案 🕵️‍♂️</title>
+    <style>
+        /* 針對 iPad 優化的排版設計 */
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #d35400;
+            --pink-card: #ffe4e1;
+            --pink-card-border: #ffb6c1;
+            --bg-color: #f5f2eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            border-bottom: 4px double var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        /* 號碼選擇區 */
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .num-btn {
+            background-color: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            padding: 15px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            /* iPad 觸控優化 */
+            touch-action: manipulation;
+        }
+
+        .num-btn:active {
+            transform: scale(0.95);
+        }
+
+        .num-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: inset 0 3px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 題目顯示區 */
+        #question-display {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .question-header {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .question-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+
+        .question-text {
+            font-size: 1.4em;
+            margin-bottom: 25px;
+            text-align: justify;
+        }
+
+        /* 粉紅計算卡片 */
+        .pink-card {
+            background-color: var(--pink-card);
+            border: 3px dashed var(--pink-card-border);
+            border-radius: 16px;
+            height: 350px; /* 大面積預留 */
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .pink-card textarea {
+            width: 100%;
+            height: calc(100% - 60px); /* 留空間給按鈕 */
+            background: transparent;
+            border: none;
+            resize: none;
+            font-size: 1.3em;
+            font-family: inherit;
+            color: #444;
+            outline: none;
+        }
+
+        .pink-card textarea::placeholder {
+            color: #d8969e;
+        }
+
+        /* 解題按鈕 */
+        .solve-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+
+        .solve-btn:active {
+            background-color: #219653;
+            transform: scale(0.95);
+        }
+
+        /* 標準解題過程區 */
+        .solution-box {
+            display: none;
+            background-color: #e8f4f8;
+            border-left: 6px solid #3498db;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 1.3em;
+            margin-top: 20px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .step { margin-bottom: 10px; }
+        .final-ans {
+            font-weight: bold;
+            color: #c0392b;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.9em;
+            margin: 0 2px;
+        }
+        .fraction span { display: block; padding: 0 2px; }
+        .fraction span.num { border-bottom: 1px solid #333; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>小老師破奇案 🕵️‍♂️</h1>
+    <p class="instructions">請點擊下方的案件編號，在粉紅色的卡片上計算，最後按「解題」對答案喔！</p>
+
+    <div class="number-grid" id="numberGrid"></div>
+
+    <div id="question-display">
+        <div class="question-header">
+            <span class="question-icon">🕵️‍♂️</span>
+            <span id="q-title">【第 X 題】</span>
+        </div>
+        <div class="question-text" id="q-text">題目文字載入中...</div>
+
+        <div class="pink-card">
+            <textarea placeholder="點擊這裡，將這張粉紅卡片當作你的計算紙寫下過程吧... ✏️"></textarea>
+            <button class="solve-btn" id="solveBtn" onclick="toggleSolution()">解題 💡</button>
+        </div>
+
+        <div class="solution-box" id="solutionBox"></div>
+    </div>
+</div>
+
+<script>
+    // 34 道題目的資料庫 (已過濾敏感字眼，優化故事情境)
+    const questionsData = [
+        {
+            text: "大偵探在現場發現了一張超市收據，上面寫著：「一打線索卡賣 36 元，嫌疑犯買了半打線索卡和一盒 15 元的放大鏡保護殼。」為了核對嫌疑犯錢包裡的現金額度，請問這張收據的總金額是多少元？",
+            steps: ["1. 依據常識，一打是 12 張，半打則是 6 張（即一打的一半）。", "2. 計算半打線索卡的價錢：36 ÷ 2 = 18（元）", "3. 計算總花費金額：18 + 15 = 33（元）"],
+            ans: "這張收據的總金額是 33 元。"
+        },
+        {
+            text: "警長把一盒用來記錄指紋的鉛筆平均分給了 6 名探員，每名探員分到 48 枝鉛筆，最後盒子裡還剩下 10 枝。為了清點局裡的資產，請問這盒證物鉛筆原本一共有多少枝？",
+            steps: ["1. 先計算分給 6 名探員的鉛筆總數：48 × 6 = 288（枝）", "2. 再加上辦公桌盒內剩下的鉛筆：288 + 10 = 298（枝）"],
+            ans: "這盒證物鉛筆原本一共有 298 枝。"
+        },
+        {
+            text: "水果店有 72 個進口蘋果，每 6 個裝成一袋。店員在不知情的情況下已經賣出了 8 袋。大偵探必須立刻查封剩下的蘋果進行搜證，請問還剩下多少袋蘋果需要檢查？",
+            steps: ["1. 計算原本的蘋果總共可以裝成多少袋：72 ÷ 6 = 12（袋）", "2. 減去已經賣出的袋數：12 - 8 = 4（袋）"],
+            ans: "還剩下 4 袋蘋果需要檢查。"
+        },
+        {
+            text: "嫌疑人小明涉嫌重大案件，大偵探在他身上搜出了 28 元餘款。小明交代說，他出門時帶了 100 元，剛剛去文具店買了 4 本售價相同的加密筆記本。請問每本筆記本的零售價是多少元？",
+            steps: ["1. 計算買筆記本一共花掉了多少元：100 - 28 = 72（元）", "2. 計算每本筆記本的單價：72 ÷ 4 = 18（元）"],
+            ans: "每本筆記本售 18 元。"
+        },
+        {
+            text: "情報組織在花店搜獲了 85 朵用來傳遞情報的玫瑰花，其中有 10 朵掉在地上受損，其餘的被平均包裝成了 5 束送往總部。如果每束玫瑰的花朵數量都相同，請問每束裡面有多少朵玫瑰？",
+            steps: ["1. 計算完好並成功包裝的玫瑰總數：85 - 10 = 75（朵）", "2. 將這些玫瑰平均分成 5 束：75 ÷ 5 = 15（朵）"],
+            ans: "每束裡面有 15 朵玫瑰。"
+        },
+        {
+            text: "情報員哥哥手上有 120 張加密書籤，這個數量剛好是弟弟的 3 倍。如果弟弟為了配合大偵探搜證，緊急拿出了 5 張書籤給警方做對比，請問弟弟現在手裡還剩下多少張加密書籤？",
+            steps: ["1. 先算出弟弟原本擁有的書籤數量：120 ÷ 3 = 40（張）", "2. 減去交給警方的數量：40 - 5 = 35（張）"],
+            ans: "弟弟還剩下 35 張加密書籤。"
+        },
+        {
+            text: "特工小麗正在執行長途追蹤任務，她需要購買 8 瓶特製能量水。商店裡整箱 24 瓶售價 120 元。如果商店允許零售，且每瓶價格相同，請問小麗買這 8 瓶果汁應該付多少元？",
+            steps: ["1. 計算單瓶能量水的售價：120 ÷ 24 = 5（元）", "2. 計算 8 瓶的總價：5 × 8 = 40（元）"],
+            ans: "小麗應該付 40 元。"
+        },
+        {
+            text: "警方包圍了一家未經授權的地下晶片工廠。根據內部資料，這家工廠的機器 4 小時可以生產 800 個追蹤器零件。按此速度，他們要完成 1200 個零件的訂單來出貨，請問需要開機運作多少小時？",
+            steps: ["1. 計算機器每小時能生產的零件數：800 ÷ 4 = 200（個）", "2. 計算生產 1200 個零件所需的時間：1200 ÷ 200 = 6（小時）"],
+            ans: "需要開機運作 6 小時。"
+        },
+        {
+            text: "大偵探截獲了一批犯罪分子用來偽裝的糖果盒。一大包裝的糖果有 45 粒，這個數量是小包裝的 3倍。大偵探在現場一共搜獲了 5 包小包裝的糖果，請問這 5 包裡面共有多少粒糖果？",
+            steps: ["1. 先計算一包小包裝糖果的數量：45 ÷ 3 = 15（粒）", "2. 計算 5 包小包裝的總和：15 × 5 = 75（粒）"],
+            ans: "這 5 包裡面共有 75 粒糖果。"
+        },
+        {
+            text: "私家偵探陳先生帶了 50 元去文具店採購偵查筆。店內正舉行促銷：這種筆每支 8 元，買 5 支送 1 支。請問陳先生用這 50 元最多可以得到多少支筆？還會剩下多少元？",
+            steps: ["1. 計算 50 元直接購買可以買到多少支：50 ÷ 8 = 6（支）…… 餘 2（元）", "2. 檢查贈送條件：因為「買 5 支送 1 支」，他買了 6 支，已經滿足送 1 支的條件。", "3. 計算總得到的筆數：6 + 1 = 7（支）"],
+            ans: "最多可得到 7 支筆，還剩下 2 元。"
+        },
+        {
+            text: "小華在嫌疑書店買了 2 本涉嫌抄襲的偵探小說，他付給店員 100 元。大偵探在櫃檯查到，這款小說「3 本共售 75 元」。請問店員應該找回給小華多少元，好讓大偵探核對收銀機的帳目？",
+            steps: ["1. 先算出一本小說的單價：75 ÷ 3 = 25（元）", "2. 計算買 2 本需要付的金額：25 × 2 = 50（元）", "3. 計算店員應找回的金額：100 - 50 = 50（元）"],
+            ans: "店員應該找回 50 元。"
+        },
+        {
+            text: "兩名小偷在密室裡一邊分贓一邊吃午餐。小紅吃了 <div class='fraction'><span class='num'>3</span><span>8</span></div> 個大薄餅，小明吃了 <div class='fraction'><span class='num'>2</span><span>8</span></div> 個大薄餅。請問他們兩人一共吃了多少個大薄餅？",
+            steps: ["1. 同分母分數相加，分母不變，分子相加。", "2. 計算：3/8 + 2/8 = 5/8（個）"],
+            ans: "他們兩人一共吃了 5/8 個大薄餅。"
+        },
+        {
+            text: "（接上題）大偵探破門而入時，兩名小偷已經逃跑。大偵探需要記錄現場留下的食物證物。如果原本只有一個完整的大薄餅，而且他們兩人剛才一共吃了 <div class='fraction'><span class='num'>5</span><span>8</span></div> 個，請問現場還剩下多少個大薄餅？",
+            steps: ["1. 將一個完整的大薄餅看作整體「1」，即 8/8。", "2. 用整體減去吃掉的分數：8/8 - 5/8 = 3/8（個）"],
+            ans: "現場還剩下 3/8 個大薄餅。"
+        },
+        {
+            text: "實驗室的水箱裡原本裝有 <div class='fraction'><span class='num'>9</span><span>10</span></div> 升的特殊化學顯影水。嫌犯在潛入時用去了 <div class='fraction'><span class='num'>4</span><span>10</span></div> 升。為了提取足夠的殘留樣本，請問此時水箱裡還剩多少升化學顯影水？",
+            steps: ["1. 分數相減算式：9/10 - 4/10 = 5/10（升）", "2. 將分數化成最簡分數：5/10 = 1/2（升）"],
+            ans: "此時水箱裡還剩 1/2 升化學顯影水。"
+        },
+        {
+            text: "大偵探為了防止水箱乾涸，往裡面重新注入了 <div class='fraction'><span class='num'>3</span><span>10</span></div> 升的清水。已知裡面原本剩下 <div class='fraction'><span class='num'>5</span><span>10</span></div> 升殘留液。請問此時水箱裡一共有多少升液體？",
+            steps: ["1. 將原本剩下的 5/10 升加上新注入的 3/10 升。", "2. 計算：5/10 + 3/10 = 8/10（升）", "3. 約化成分數：8/10 = 4/5（升）"],
+            ans: "此時水箱裡一共有 4/5 升液體。"
+        },
+        {
+            text: "嫌犯沿著一個長方形的秘密植物園邊緣逃跑並留下了鞋印。大偵探測量出這個植物園的長是 25 米，寬比長短 10 米。嫌犯沿邊緣跑了一整圈，請問這個植物園的周界是多少米？",
+            steps: ["1. 先計算植物園的寬度：25 - 10 = 15（米）", "2. 運用長方形周界公式：（長 + 寬）× 2", "3. 計算：（25 + 15）× 2 = 40 × 2 = 80（米）"],
+            ans: "這個植物園的周界是 80 米。"
+        },
+        {
+            text: "怪盜用一根長 256 厘米的特製導線，在走廊上圍成了 4 個大小完全相同的正方形防盜紅外線網。大偵探需要跨越它們，請問每個正方形防盜網的邊長是多少厘米？",
+            steps: ["1. 先計算出每一個正方形所分配到的導線長度（即周界）：256 ÷ 4 = 64（厘米）", "2. 因為正方形有 4 條相等的邊，計算邊長：64 ÷ 4 = 16（厘米）"],
+            ans: "每個正方形的邊長是 16 厘米。"
+        },
+        {
+            text: "金庫門前有一塊不規則 L 形的電子感應地板。經測量，該圖形的上方橫邊長 6 cm，左側豎邊長 4 cm，右側凹進去的豎邊長 2 cm，下方最長橫邊為 10 cm。請問這塊感應地板的周界是多少厘米？",
+            steps: ["1. 運用「平移法」，不規則 L 形內部凹陷的水平與垂直線段，可以向外平移形成一個大長方形。", "2. 平移後，大長方形的長是 10 cm、寬是 4 cm。", "3. 計算周界：（10 + 4）× 2 = 14 × 2 = 28（厘米）"],
+            ans: "這塊感應地板的周界是 28 厘米。"
+        },
+        {
+            text: "保險箱表面彈出了第二道幾何防禦網，是一個不規則的階梯形圖形。總寬度為 12 cm，總高度為 8 cm。請運用平移法算出，這道幾何機關圖形的總周界是多少厘米？",
+            steps: ["1. 根據平移原理，所有水平階梯線段向外平移後，等於底部總寬度的 2 倍。", "2. 所有垂直階梯線段向外平移後，等於側邊總高度的 2 倍。", "3. 計算：（12 + 8）× 2 = 20 × 2 = 40（厘米）"],
+            ans: "總周界是 40 厘米。"
+        },
+        {
+            text: "大偵探把兩塊大小完全相同的正方形拼圖證物卡拼成了一個大長方形。已知原本正方形的邊長是 12 厘米，請問拼成的大長方形的周界是多少厘米？",
+            steps: ["1. 兩塊正方形橫向拼接後，大長方形的長度變成：12 × 2 = 24（厘米）", "2. 大長方形的寬度依然保持不變：12（厘米）", "3. 計算大長方形的周界：（長 + 寬）× 2 = （24 + 12）× 2 = 72（厘米）"],
+            ans: "拼成的大長方形的周界是 72 厘米。"
+        },
+        {
+            text: "大偵探發現犯人將晶片藏在書架上。經卡尺精準測量，一本普通字典厚 3.5 厘米，而藏有晶片的空心百科全書比它還要厚 2.7 厘米。請問這本百科全書的實際厚度是多少厘米？",
+            steps: ["1. 運用小數加法：3.5 + 2.7", "2. 確保小數點對齊後相加，結果為 6.2。"],
+            ans: "這本百科全書的實際厚度是 6.2 厘米。"
+        },
+        {
+            text: "為了看清嫌犯大樓內部的動向，身高 1.45 米的特工小剛站在一張 0.3 米高的木凳上進行觀測。請問此時小剛的頭頂部距離地面多少米？",
+            steps: ["1. 將特工的身高與凳子的高度相加。", "2. 小數計算：1.45 + 0.3 = 1.75（米）"],
+            ans: "小剛的頭頂部距離地面 1.75 米。"
+        },
+        {
+            text: "大偵探正在跟蹤一名偽裝成家庭主婦的犯罪嫌疑人。她在菜市場買菜作為掩護，花了 45.8 元買魚，12.5 元買有機蔬菜。請問這位嫌疑人一共花了多少元？",
+            steps: ["1. 列出小數加法算式：45.8 + 12.5", "2. 對齊小數點後相加，結果為 58.3。"],
+            ans: "共花了 58.3 元。"
+        },
+        {
+            text: "犯罪現場的一支監聽筆原本外接導線長 15.5 厘米，被犯人用剪刀破壞、剪去了一段後，還剩下 8.7 厘米。請問被剪去（用去）的那一段導線長多少厘米？",
+            steps: ["1. 運用小數減法，用原長度減去剩下的長度。", "2. 計算：15.5 - 8.7 = 6.8（厘米）"],
+            ans: "被剪去的那一段是 6.8 厘米。"
+        },
+        {
+            text: "在驚險的百米追捕中，逃跑的嫌犯跑了 14.3 秒，而後面奮力追趕的警探小強比嫌犯快了 0.5 秒（即少用了 0.5 秒）。請問警探小強跑百米用了多少秒？",
+            steps: ["1. 因為小強的速度「快」，代表他耗費的時間更少，所以要用減法。", "2. 計算：14.3 - 0.5 = 13.8（秒）"],
+            ans: "警探小強跑了 13.8 秒。"
+        },
+        {
+            text: "海關在碼頭查獲了一桶走私高純度化學燃料。經磅秤稱重，這一桶燃料連桶共重 5.2 公斤，空桶的重量是 0.45 公斤。請問這裡面燃料的淨重是多少公斤？",
+            steps: ["1. 淨重 = 總重量 - 容器空桶重量。", "2. 補零對齊計算：5.20 - 0.45 = 4.75（公斤）"],
+            ans: "燃料淨重是 4.75 公斤。"
+        },
+        {
+            text: "臥底探員小華原本有 50 元經費。大偵探調閱監控發現他在偽裝時，買文具用去 18.4 元，買零食用去 7.6 元。請問小華的錢包裡現在應該還剩多少元？",
+            steps: ["1. 先計算一共用去了多少錢：18.4 + 7.6 = 26.0（元）", "2. 再用總經費減去花掉的錢：50 - 26 = 24（元）"],
+            ans: "他口袋裡應該還剩 24 元。"
+        },
+        {
+            text: "工廠倉庫外圍的一條警示帶原本長 10 米。狡猾的犯人為了切斷通道，第一次剪去了 3.25 米，第二次又剪去了 4.8 米。請問這條警示帶現在還剩下多少米？",
+            steps: ["1. 計算總共剪去了多少米：3.25 + 4.8 = 8.05（米）", "2. 計算最後剩下的長度：10 - 8.05 = 1.95（米）"],
+            ans: "警示帶還剩下 1.95 米。"
+        },
+        {
+            text: "在地下非法印刷廠裡，一個油墨稀釋槽原本儲水 15.6 升，中途自動加入了 5.8 升後，又在提煉過程中用去了 8.25 升。請問現在稀釋槽裡還有多少升液體？",
+            steps: ["1. 先計算加上自動注水後的總量：15.6 + 5.8 = 21.4（升）", "2. 再減去蒸發用去的液體：21.4 - 8.25 = 13.15（升）"],
+            ans: "現在稀釋槽裡還有 13.15 升液體。"
+        },
+        {
+            text: "犯罪集團藏匿了一桶原重 5<div class='fraction'><span class='num'>7</span><span>10</span></div> 公斤的特製打印機油。犯人為了銷毀帳本，用去了 2<div class='fraction'><span class='num'>3</span><span>10</span></div> 公斤。請問這桶油還剩下多少公斤？",
+            steps: ["1. 帶分數減法：整數部分相減，分數部分相減。", "2. 計算：(5 - 2) + (7/10 - 3/10) = 3 又 4/10", "3. 約簡分數：3 又 4/10 = 3 又 2/5 (公斤)"],
+            ans: "這桶油還剩下 3 又 2/5 公斤。"
+        },
+        {
+            text: "大偵探拿了一條長 2 米的強力尼龍繩準備用來綁緊證物箱，打包時用去了 <div class='fraction'><span class='num'>3</span><span>4</span></div> 米。請問這條尼龍繩還剩下多少米？",
+            steps: ["1. 將 2 改寫成分母為 4 的假分數，即 8/4。", "2. 計算減法：8/4 - 3/4 = 5/4（米）", "3. 轉換成帶分數：5/4 = 1 又 1/4（米）"],
+            ans: "這條尼龍繩還剩下 1 又 1/4 米。"
+        },
+        {
+            text: "嫌犯正逃往圖書館，總距離是一公里（1 km）。大偵探小明負責追捕，目前他已經走了 <div class='fraction'><span class='num'>3</span><span>10</span></div> 公里。為了在全路程的正中央（中點）設卡攔截，小明還要走多遠？",
+            steps: ["1. 一公里的中點（一半）是 1/2 公里，擴分後等於 5/10 公里。", "2. 用中點位置減去已走距離：5/10 - 3/10 = 2/10（公里）", "3. 化簡分數：2/10 = 1/5（公里）"],
+            ans: "小明還要走 1/5 公里。"
+        },
+        {
+            text: "大偵探在兩處窩點共逮捕了兩組涉案嫌疑人，兩組共有 42 人。經審訊得知，第一組的人數比第二組多 6 人。請問這兩組各有多少人？",
+            steps: ["1. 此為「和差問題」。先從總數中扣除相差的人數。", "2. 計算人數較少的第二組：（42 - 6）÷ 2 = 36 ÷ 2 = 18（人）", "3. 計算第一組：18 + 6 = 24（人）"],
+            ans: "第一組有 24 人，第二組有 18 人。"
+        },
+        {
+            text: "密室大門的電子密碼盤提示：<br>• 千位數：第 3 題的「剩餘袋數」<br>• 百位數：第 5 題「每束玫瑰數量」的個位數字<br>• 十位數：第 11 題「應找回金額」的十位數字<br>• 個位數：第 17 題「正方形邊長」的個位數字<br>請拼湊出這組四位數的終極密碼！",
+            steps: ["1. 第 3 題剩餘 4 袋 -> 千位數 = 4", "2. 第 5 題每束 15 朵，個位是 5 -> 百位數 = 5", "3. 第 11 題找回 50 元，十位是 5 -> 十位數 = 5", "4. 第 17 題邊長 16 厘米，個位是 6 -> 個位數 = 6"],
+            ans: "終極解鎖密碼是 4556。"
+        }
+    ];
+
+    // 初始化號碼網格
+    const grid = document.getElementById('numberGrid');
+    const questionDisplay = document.getElementById('question-display');
+    const qTitle = document.getElementById('q-title');
+    const qText = document.getElementById('q-text');
+    const solutionBox = document.getElementById('solutionBox');
+    const solveBtn = document.getElementById('solveBtn');
+    
+    let currentQuestionIndex = -1;
+
+    for (let i = 0; i < questionsData.length; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'num-btn';
+        btn.innerText = i + 1;
+        btn.onclick = () => loadQuestion(i, btn);
+        grid.appendChild(btn);
+    }
+
+    function loadQuestion(index, btnElement) {
+        // 重置所有按鈕樣式
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        currentQuestionIndex = index;
+        const qData = questionsData[index];
+
+        // 載入題目資料
+        qTitle.innerText = `案件 ${index + 1}`;
+        qText.innerHTML = qData.text;
+        
+        // 清空粉紅卡片的文字並隱藏解答
+        document.querySelector('.pink-card textarea').value = '';
+        solutionBox.style.display = 'none';
+        solveBtn.innerText = '解題 💡';
+
+        // 顯示題目區塊
+        questionDisplay.style.display = 'block';
+        
+        // 讓畫面平滑滾動到題目區
+        questionDisplay.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleSolution() {
+        if (solutionBox.style.display === 'block') {
+            solutionBox.style.display = 'none';
+            solveBtn.innerText = '解題 💡';
+        } else {
+            const qData = questionsData[currentQuestionIndex];
+            
+            // 構建標準解答 HTML
+            let htmlContent = '<strong>【標準解題過程】</strong><br><br>';
+            qData.steps.forEach(step => {
+                htmlContent += `<div class="step">${step}</div>`;
+            });
+            htmlContent += `<div class="final-ans">答：${qData.ans}</div>`;
+            
+            solutionBox.innerHTML = htmlContent;
+            solutionBox.style.display = 'block';
+            solveBtn.innerText = '收起解答 🙈';
+        }
+    }
+</script>
+
+</body>
+</html>
